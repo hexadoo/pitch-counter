@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitch Counter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0A74DA;
+            color: white;
+        }
+        .counter {
+            font-size: 3em;
+            margin: 20px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-around;
+            width: 300px;
+            margin: 20px;
+        }
+        button {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            background-color: white;
+            border: none;
+            color: #0A74DA;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:active {
+            background-color: #ccc;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        label, input {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Enter Pitcher Information</h1>
+    <form id="pitcher-form">
+        <label for="pitcher_name">Pitcher Name:</label>
+        <input type="text" id="pitcher_name" name="pitcher_name" required>
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+        <label for="inning">Inning:</label>
+        <input type="number" id="inning" name="inning" required>
+        <button type="submit">Submit</button>
+    </form>
+    <div>
+        <div class="stats">
+            <div id="balls">8 Balls</div>
+            <div id="strikes">13 Strikes</div>
+        </div>
+        <div class="counter" id="total-count">21</div>
+        <div class="button-container">
+            <button onclick="incrementBall()">Ball</button>
+            <button onclick="incrementStrike()">Strike</button>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "34ab23be99e07c768f229a8828c46ef8dd7f6b3d",
+            authDomain: "hexapitchc.firebaseapp.com",
+            projectId: "hexapitchc",
+            storageBucket: "hexapitchc.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "114859039428833350638"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let balls = 8;
+        let strikes = 13;
+
+        function updateCounts() {
+            document.getElementById('balls').innerText = `${balls} Balls`;
+            document.getElementById('strikes').innerText = `${strikes} Strikes`;
+            document.getElementById('total-count').innerText = balls + strikes;
+        }
+
+        function incrementBall() {
+            balls++;
+            updateCounts();
+            saveResults();
+        }
+
+        function incrementStrike() {
+            strikes++;
+            updateCounts();
+            saveResults();
+        }
+
+        function saveResults() {
+            const results = { balls, strikes };
+            localStorage.setItem('pitchCounts', JSON.stringify(results));
+        }
+
+        function loadResults() {
+            const savedResults = localStorage.getItem('pitchCounts');
+            if (savedResults) {
+                const { balls: savedBalls, strikes: savedStrikes } = JSON.parse(savedResults);
+                balls = savedBalls;
+                strikes = savedStrikes;
+                updateCounts();
+            }
+        }
+
+        document.getElementById('pitcher-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const pitcherName = document.getElementById('pitcher_name').value;
+            const date = document.getElementById('date').value;
+            const inning = document.getElementById('inning').value;
+
+            try {
+                await db.collection('pitch_data').add({
+                    pitcher_name: pitcherName,
+                    date: date,
+                    inning: inning
+                });
+                alert('Data submitted successfully!');
+            } catch (error) {
+                alert('Failed to submit data.');
+            }
+        });
+
+        window.onload = loadResults;
+    </script>
+</body>
+</html>
